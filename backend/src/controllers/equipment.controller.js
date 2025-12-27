@@ -46,6 +46,7 @@ export const getEquipment = catchAsync(async (req, res) => {
                 category: { select: { id: true, name: true } },
                 team: { select: { id: true, name: true } },
                 technician: { select: { id: true, name: true } },
+                employee: { select: { id: true, name: true } },
                 workCenter: { select: { id: true, name: true, code: true } },
                 _count: {
                     select: { requests: true },
@@ -77,6 +78,7 @@ export const getEquipmentById = catchAsync(async (req, res, next) => {
             category: { select: { id: true, name: true } },
             team: { select: { id: true, name: true } },
             technician: { select: { id: true, name: true, email: true } },
+            employee: { select: { id: true, name: true, email: true } },
             workCenter: { select: { id: true, name: true, code: true } },
             requests: {
                 take: 10,
@@ -113,6 +115,7 @@ export const createEquipment = catchAsync(async (req, res) => {
         company,
         usedByRole,
         employeeName,
+        employeeId,
         teamId,
         technicianId,
         assignedDate,
@@ -128,6 +131,7 @@ export const createEquipment = catchAsync(async (req, res) => {
             company,
             usedByRole,
             employeeName,
+            employeeId,
             teamId,
             technicianId,
             assignedDate: assignedDate ? new Date(assignedDate) : null,
@@ -138,6 +142,7 @@ export const createEquipment = catchAsync(async (req, res) => {
         include: {
             category: { select: { id: true, name: true } },
             team: { select: { id: true, name: true } },
+            employee: { select: { id: true, name: true } },
         },
     });
 
@@ -155,6 +160,7 @@ export const updateEquipment = catchAsync(async (req, res, next) => {
         company,
         usedByRole,
         employeeName,
+        employeeId,
         teamId,
         technicianId,
         assignedDate,
@@ -181,6 +187,7 @@ export const updateEquipment = catchAsync(async (req, res, next) => {
             company,
             usedByRole,
             employeeName,
+            employeeId,
             teamId,
             technicianId,
             assignedDate: assignedDate ? new Date(assignedDate) : undefined,
@@ -193,6 +200,7 @@ export const updateEquipment = catchAsync(async (req, res, next) => {
         include: {
             category: { select: { id: true, name: true } },
             team: { select: { id: true, name: true } },
+            employee: { select: { id: true, name: true } },
         },
     });
 

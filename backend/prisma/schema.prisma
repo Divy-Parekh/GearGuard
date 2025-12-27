@@ -60,6 +60,8 @@ model User {
   assignedRequests   MaintenanceRequest[] @relation("AssignedTo")
   // Equipment assigned to this technician
   assignedEquipment  Equipment[]          @relation("TechnicianEquipment")
+  // Equipment assigned to this employee
+  assignedAsEmployee Equipment[]          @relation("EquipmentEmployee")
   // Worksheets authored
   worksheets         Worksheet[]
   // Notifications for this user
@@ -139,6 +141,8 @@ model Equipment {
   team         Team?      @relation(fields: [teamId], references: [id])
   technicianId String?
   technician   User?      @relation("TechnicianEquipment", fields: [technicianId], references: [id])
+  employeeId   String?
+  employee     User?      @relation("EquipmentEmployee", fields: [employeeId], references: [id])
   workCenterId String?
   workCenter   WorkCenter? @relation(fields: [workCenterId], references: [id])
 
