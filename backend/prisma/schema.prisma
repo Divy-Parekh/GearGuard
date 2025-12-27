@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  USER
+  TECHNICIAN
+  MANAGER
+  ADMIN
+}
+
+enum EquipmentStatus {
+  ACTIVE
+  SCRAPPED
+}
+
+enum MaintenanceType {
+  CORRECTIVE
+  PREVENTIVE
+}
+
+enum RequestStatus {
+  NEW
+  IN_PROGRESS
+  REPAIRED
+  SCRAP
+}
+
+enum NotificationType {
+  CRITICAL
+  REQUEST
+  COMPLETED
+  SCHEDULE
+}
+
+// Models
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  company   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  teamId    String?
+  team      Team?    @relation(fields: [teamId], references: [id])
+
+  // Requests created by this user
+  createdRequests    MaintenanceRequest[] @relation("CreatedBy")
+  // Requests assigned to this technician
+  assignedRequests   MaintenanceRequest[] @relation("AssignedTo")
+  // Equipment assigned to this technician
+  assignedEquipment  Equipment[]          @relation("TechnicianEquipment")
+  // Worksheets authored
+  worksheets         Worksheet[]
+  // Notifications for this user
+  notifications      Notification[]
+
+  @@map("users")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  responsible String?
+  company     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  equipment   Equipment[]
+  requests    MaintenanceRequest[]
+
+  @@map("categories")
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String
+  company   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members   User[]
+  equipment Equipment[]
+  requests  MaintenanceRequest[]
+
+  @@map("teams")
+}
+
+model WorkCenter {
+  id                    String   @id @default(cuid())
+  name                  String
+  code                  String   @unique
+  tag                   String?
+  alternativeWorkCenter String?
+  costPerHour           Float?
+  capacity              Int?
+  timeEfficiency        Float?   @default(100)
+  oeeTarget             Float?   @default(85)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Relations
+  equipment Equipment[]
+  requests  MaintenanceRequest[]
+
+  @@map("work_centers")
+}
+
+model Equipment {
+  id           String          @id @default(cuid())
+  name         String
+  company      String?
+  usedByRole   String?
+  employeeName String?
+  assignedDate DateTime?
+  scrapDate    DateTime?
+  location     String?
+  description  String?
+  status       EquipmentStatus @default(ACTIVE)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relations
+  categoryId   String?
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  teamId       String?
+  team         Team?      @relation(fields: [teamId], references: [id])
+  technicianId String?
+  technician   User?      @relation("TechnicianEquipment", fields: [technicianId], references: [id])
+  workCenterId String?
+  workCenter   WorkCenter? @relation(fields: [workCenterId], references: [id])
+
+  // Maintenance requests for this equipment
+  requests     MaintenanceRequest[]
+
+  @@map("equipment")
+}
+
+model MaintenanceRequest {
+  id              String          @id @default(cuid())
+  subject         String
+  requestDate     DateTime        @default(now())
+  maintenanceType MaintenanceType @default(CORRECTIVE)
+  scheduledDate   DateTime?
+  priority        Int             @default(3) // 1-5 stars
+  company         String?
+  notes           String?
+  instructions    String?
+  status          RequestStatus   @default(NEW)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  createdById  String
+  createdBy    User       @relation("CreatedBy", fields: [createdById], references: [id])
+  equipmentId  String?
+  equipment    Equipment? @relation(fields: [equipmentId], references: [id])
+  workCenterId String?
+  workCenter   WorkCenter? @relation(fields: [workCenterId], references: [id])
+  categoryId   String?
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  teamId       String?
+  team         Team?      @relation(fields: [teamId], references: [id])
+  technicianId String?
+  technician   User?      @relation("AssignedTo", fields: [technicianId], references: [id])
+
+  // Notifications related to this request
+  notifications Notification[]
+  // Worksheets/comments
+  worksheets   Worksheet[]
+
+  @@map("maintenance_requests")
+}
+
+model Worksheet {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  requestId String
+  request   MaintenanceRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User               @relation(fields: [authorId], references: [id])
+
+  @@map("worksheets")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // Relations
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requestId String?
+  request   MaintenanceRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}
